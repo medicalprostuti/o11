@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিম্নের কোনটি মিঠা পানির সর্ববৃহৎ উৎস?",
+          options: {
+            A: "ভূগর্ভস্থ পানি",
+            B: "দক্ষিণ মেরুর বরফ",
+            C: "উত্তর মেরুর বরফ",
+            D: "নদীর পানি",
+          },
+          correct: "C",
+          explanation: `
+    <p>মিঠা পানির সর্ববৃহৎ উৎস হলো হিমবাহ ও বরফ। বিশ্বের মোট মিঠা পানির প্রায় ৬৯% হিমবাহ ও মেরু অঞ্চলের বরফ টুপিতে সঞ্চিত আছে। এর মধ্যে উত্তর মেরুর বরফ এবং হিমবাহগুলো মিঠা পানির সবচেয়ে বড় সঞ্চয়স্থল।</p>
+    `,
+        },
+        {
+          id: 2,
+          question:
+            "ভূপৃষ্ঠের পানিতে দ্রবীভূত অক্সিজেন (DO) বিষয়ে কোন বাক্যটি সঠিক?",
+          options: {
+            A: "জৈব বর্জ্য থাকলে DO বেশি হয়",
+            B: "জীবাণু উপস্থিতি DO বাড়িয়ে দেয়",
+            C: "DO ৪.০-৬.০ পিপিএম থাকা প্রয়োজন",
+            D: "DO ৮.০ পিপিএম এর নিচে থাকা প্রয়োজন",
+          },
+          correct: "C",
+          explanation: `
+    <p>ভূপৃষ্ঠের পানিতে দ্রবীভূত অক্সিজেন (DO) জলজ প্রাণীর টিকে থাকার জন্য অত্যন্ত গুরুত্বপূর্ণ। আদর্শ অবস্থায় পানিতে DO এর মান ৪.০-৬.০ পিপিএম (ppm) বা এর বেশি থাকা প্রয়োজন।</p>
+    <ul>
+      <li>জৈব বর্জ্য বা জীবাণুর উপস্থিতি অক্সিজেনের ব্যবহার বাড়িয়ে দেয়, ফলে DO এর মান কমে যায়।</li>
+      <li>সাধারণত, সুস্থ জলজ পরিবেশের জন্য DO এর মান ৪-৬ mg/L এর নিচে নামা উচিত নয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 3,
+          question: "কোন কারণে খর পানিতে সাবানের ফেনা হয় না?",
+          options: {
+            A: "বৈদ্যুতিক চার্জ অসার হওয়া",
+            B: "সোডিয়াম কার্বোনেট তৈরি করা",
+            C: "pH বেশি থাকা",
+            D: "খর পানির Ca²⁺ ও Mg²⁺ আয়ন বিক্রিয়া করে অদ্রবণীয় গাদ করা",
+          },
+          correct: "D",
+          explanation: `
+    <p>খর পানিতে ক্যালসিয়াম (Ca²⁺) এবং ম্যাগনেসিয়াম (Mg²⁺) এর মতো ধাতব আয়ন দ্রবীভূত থাকে। সাবান এই আয়নগুলোর সাথে বিক্রিয়া করে অদ্রবণীয় ক্যালসিয়াম স্টিয়ারেট বা ম্যাগনেসিয়াম স্টিয়ারেট তৈরি করে, যা সাদা অদ্রবণীয় অধঃক্ষেপ বা গাদ হিসেবে পরিচিত। এই গাদ ফেনা তৈরি হতে বাধা দেয়।</p>
+    `,
+        },
+        {
+          id: 4,
+          question:
+            "নিচের কোন পদ্ধতি পানির স্থায়ী খরতা দূর করার জন্য ব্যবহার করা যায় না?",
+          options: {
+            A: "ফুটন্তকরণ",
+            B: "পাতন",
+            C: "Sodium carbonate সংযোজন",
+            D: "Caustic soda সংযোজন",
+          },
+          correct: "A",
+          explanation: `
+    <p>পানির অস্থায়ী খরতা দূর করার জন্য ফুটন্তকরণ পদ্ধতি ব্যবহার করা হয়, কারণ ফুটানোর ফলে বাইকার্বনেটগুলো কার্বনেটে পরিণত হয়ে অধঃক্ষিপ্ত হয়।</p>
+    <ul>
+      <li>স্থায়ী খরতা দূর করার জন্য ফুটন্তকরণ কার্যকর নয়।</li>
+      <li>পাতন, সোডিয়াম কার্বনেট (ওয়াশিং সোডা) সংযোজন, এবং কস্টিক সোডা সংযোজন স্থায়ী খরতা দূর করার পদ্ধতি।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 5,
+          question: "বাংলাদেশে মিঠা পানির প্রধান উৎস কোনটি?",
+          options: {
+            A: "বিশুদ্ধ পানি",
+            B: "নদীর পানি",
+            C: "ভূগর্ভস্থ পানি",
+            D: "পুকুরের পানি",
+          },
+          correct: "C",
+          explanation: `
+    <p>বাংলাদেশে সুপেয় পানির প্রধান উৎস হলো ভূগর্ভস্থ পানি। জনসংখ্যার একটি বিশাল অংশ দৈনন্দিন প্রয়োজনে ভূগর্ভস্থ পানির উপর নির্ভরশীল। নদী, পুকুর ও অন্যান্য সারফেস ওয়াটার উৎসগুলোও গুরুত্বপূর্ণ, তবে ভূগর্ভস্থ পানিই প্রধান উৎস হিসেবে ব্যবহৃত হয়।</p>
+    `,
+        },
+        {
+          id: 6,
+          question:
+            "কোন একটি নমুনা পানির BOD (Biochemical Oxygen Demand) 3 mg/L। নমুনা পানিটি সম্পর্কে কোনটি সঠিক?",
+          options: {
+            A: "খুবই ভালো",
+            B: "মোটামুটি ভালো",
+            C: "দূষণ মাত্রা খারাপ",
+            D: "দূষণ মাত্রা খুবই খারাপ",
+          },
+          correct: "B",
+          explanation: `
+    <p>BOD হলো পানিতে বিদ্যমান জৈব পদার্থকে অণুজীব দ্বারা বিয়োজিত করতে প্রয়োজনীয় অক্সিজেনের পরিমাণ।</p>
+    <ul>
+      <li>BOD এর মান যত কম হয়, পানি তত বিশুদ্ধ।</li>
+      <li>সাধারণত, পানযোগ্য পানির জন্য BOD এর মান 1-2 mg/L বা এর কাছাকাছি থাকা উচিত।</li>
+      <li>3 mg/L BOD নির্দেশ করে যে পানিটি মোটামুটি ভালো, তবে খুব বিশুদ্ধ নয়।</li>
+      <li>5 mg/L এর বেশি BOD দূষণ নির্দেশ করে এবং 10 mg/L এর বেশি হলে তা খারাপ বা দূষিত পানি হিসেবে বিবেচিত হয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 7,
+          question:
+            "WHO অনুমোদিত, পানির দূষণের COD (Chemical Oxygen Demand)-এর সর্বোচ্চ মান কত?",
+          options: {
+            A: "২০.০ mg/L",
+            B: "১৫.০ mg/L",
+            C: "১০.০ mg/L",
+            D: "০৫.০ mg/L",
+          },
+          correct: "C",
+          explanation: `
+    <p>WHO (World Health Organization) এর নির্দেশিকা অনুযায়ী, পানীয় জলের জন্য COD এর অনুমোদিত সর্বোচ্চ মান ১০.০ mg/L। COD হলো পানিতে জৈব ও অজৈব উভয় ধরনের দূষককে জারিত করতে প্রয়োজনীয় অক্সিজেনের মোট পরিমাণ।</p>
+    <ul>
+      <li>উচ্চ COD মান পানিতে উচ্চ মাত্রার দূষণ নির্দেশ করে।</li>
+      <li>১০.০ mg/L এর বেশি COD যুক্ত পানি পান করার জন্য নিরাপদ নয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 8,
+          question: "নিচের কোন তথ্যটি সঠিক নয়?",
+          options: {
+            A: "সারফেস ওয়াটারে HNO₃ এসিড দ্রবীভূত থাকে",
+            B: "খর পানিতে Ca²⁺, Mg²⁺, Fe²⁺ দ্রবীভূত থাকে",
+            C: "বিশুদ্ধ পানির pH ৭.০০",
+            D: "২৫°C তাপমাত্রায় পানির pH ৬.৫-৮.৫ এর মধ্যে থাকলে, পানি বর্ণহীন ও গন্ধহীন হয়",
+          },
+          correct: "A",
+          explanation: `
+    <p>সাধারণত সারফেস ওয়াটারে (যেমন নদীর পানি, পুকুরের পানি) সরাসরি HNO₃ (নাইট্রিক এসিড) দ্রবীভূত থাকে না। বরং, সার ও অন্যান্য উৎস থেকে আসা নাইট্রেট আয়ন (NO₃⁻) থাকতে পারে, যা নাইট্রোজেন চক্রের অংশ।</p>
+    <ul>
+      <li>খর পানিতে ক্যালসিয়াম, ম্যাগনেসিয়াম এবং আয়রন আয়ন দ্রবীভূত থাকে, এটি সঠিক।</li>
+      <li>বিশুদ্ধ পানির pH ৭.০০, এটিও সঠিক।</li>
+      <li>২৫°C তাপমাত্রায় পানির pH ৬.৫-৮.৫ এর মধ্যে থাকলে, পানি বর্ণহীন ও গন্ধহীন হয়, এটিও সঠিক।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 9,
+          question:
+            "মাঝে মাঝে পুকুরের মাছ পানির ওপরের অংশে হা করে শ্বাস নেয়। এ অবস্থার কারণ কী?",
+          options: {
+            A: "পানির pH এর মান ৭ এর বেশি",
+            B: "পানিতে DO এর মান খুব কম",
+            C: "পানির TDS এর মান কম",
+            D: "পানির খরতার মাত্রা বেশি",
+          },
+          correct: "B",
+          explanation: `
+    <p>পুকুরের মাছ যখন পানির উপরের অংশে এসে হা করে শ্বাস নেয়, তখন এটি পানিতে দ্রবীভূত অক্সিজেনের (DO) তীব্র অভাব নির্দেশ করে।</p>
+    <ul>
+      <li>পানিতে DO এর মান কমে গেলে মাছের শ্বাসকার্য ব্যাহত হয় এবং তারা অক্সিজেন পাওয়ার জন্য পানির উপরিভাগে চলে আসে, যেখানে অক্সিজেনের পরিমাণ সামান্য বেশি থাকতে পারে।</li>
+      <li>জৈব বর্জ্যের পচন বা উচ্চ তাপমাত্রা DO হ্রাস করতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 10,
+          question: "কোন ধরনের দূষক পানির DO এর মান হ্রাস করে?",
+          options: {
+            A: "অজৈব দূষক",
+            B: "জৈব দূষক",
+            C: "তেজস্ক্রিয় দূষক",
+            D: "কণা জাতীয় দূষক",
+          },
+          correct: "B",
+          explanation: `
+    <p>জৈব দূষকগুলো (যেমন মল-মূত্র, খাদ্য বর্জ্য, কৃষি বর্জ্য) পানিতে দ্রবীভূত অক্সিজেনের মান হ্রাস করে।</p>
+    <ul>
+      <li>যখন জৈব দূষকগুলো পানিতে প্রবেশ করে, তখন অণুজীবেরা সেগুলোকে বিয়োজিত করার জন্য দ্রবীভূত অক্সিজেন ব্যবহার করে।</li>
+      <li>এই প্রক্রিয়াকে বায়োকেমিক্যাল অক্সিজেন ডিমান্ড (BOD) বলা হয়, এবং উচ্চ BOD মানে DO এর পরিমাণ কমে যাওয়া।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 11,
+          question: "কৃষিকাজে সারফেস ওয়াটারের উপযুক্ততার মানদণ্ড কোনটি?",
+          options: {
+            A: "TDS",
+            B: "pH এর মান",
+            C: "COD",
+            D: "BOD",
+          },
+          correct: "B",
+          explanation: `
+    <p>কৃষিকাজে সারফেস ওয়াটার (ভূপৃষ্ঠের পানি) এর উপযুক্ততার জন্য pH এর মান একটি গুরুত্বপূর্ণ মানদণ্ড।</p>
+    <ul>
+      <li>ফসলের বৃদ্ধি ও মাটির গুণগত মান বজায় রাখার জন্য পানির pH একটি নির্দিষ্ট সীমার মধ্যে থাকা প্রয়োজন। সাধারণত, নিরপেক্ষ বা সামান্য অম্লীয়/ক্ষারীয় পানি কৃষিকাজের জন্য উপযুক্ত।</li>
+      <li>TDS (মোট দ্রবীভূত কঠিন পদার্থ), COD (রাসায়নিক অক্সিজেন চাহিদা) এবং BOD (জৈব রাসায়নিক অক্সিজেন চাহিদা) দূষণের নির্দেশক হলেও pH সরাসরি উদ্ভিদের বৃদ্ধিকে প্রভাবিত করে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 12,
+          question: "নিচের কোন মানটি দূষিত পানির নির্দেশক?",
+          options: {
+            A: "pH মান ৬.৪-৭.৪",
+            B: "DO মান ৬ mgL⁻¹",
+            C: "BOD মান ২ mgL⁻¹",
+            D: "COD মান ১০০ mgL⁻¹",
+          },
+          correct: "D",
+          explanation: `
+    <p>COD (Chemical Oxygen Demand) ১০০ mgL⁻¹ মানটি দূষিত পানির নির্দেশক।</p>
+    <ul>
+      <li>সাধারণত, পানীয় জলের জন্য COD এর মান ১০ mg/L এর বেশি হওয়া উচিত নয়।</li>
+      <li>উচ্চ COD মান পানিতে উচ্চ মাত্রার জৈব ও অজৈব দূষণ নির্দেশ করে।</li>
+      <li>pH ৬.৪-৭.৪, DO ৬ mgL⁻¹, এবং BOD ২ mgL⁻¹ মানগুলো অপেক্ষাকৃত ভালো মানের পানির নির্দেশক।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 13,
+          question: "পানির অস্থায়ী খরতার জন্য দায়ী কোনটি?",
+          options: {
+            A: "SO₄²⁻",
+            B: "CO₃²⁻",
+            C: "Cl⁻",
+            D: "HCO₃⁻",
+          },
+          correct: "D",
+          explanation: `
+    <p>পানির অস্থায়ী খরতার জন্য মূলত ক্যালসিয়াম বাইকার্বনেট (Ca(HCO₃)₂) এবং ম্যাগনেসিয়াম বাইকার্বনেট (Mg(HCO₃)₂) দায়ী।</p>
+    <ul>
+      <li>এগুলো পানিতে দ্রবীভূত HCO₃⁻ (বাইকার্বনেট) আয়ন আকারে থাকে।</li>
+      <li>পানি ফুটিয়ে এই খরতা দূর করা যায়, কারণ তাপের প্রভাবে বাইকার্বনেটগুলো অদ্রবণীয় কার্বনেটে পরিণত হয়ে অধঃক্ষিপ্ত হয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 14,
+          question: "WHO কর্তৃক অনুমোদিত পানীয় জলের pH মাত্রা কত?",
+          options: {
+            A: "৩.৫-৬.৪",
+            B: "৬.৫-৮.৫",
+            C: "৭.৫-৯.৪",
+            D: "৯.৫-১০.৫",
+          },
+          correct: "B",
+          explanation: `
+    <p>WHO (World Health Organization) কর্তৃক অনুমোদিত পানীয় জলের pH মাত্রা হলো ৬.৫-৮.৫। এই সীমার মধ্যে থাকলে পানি পান করার জন্য নিরাপদ ও স্বাস্থ্যকর বলে বিবেচিত হয়।</p>
+    `,
+        },
+        {
+          id: 15,
+          question: "একটি পুকুরের পানির DO এর মান ৪.০ হলে পানিটি হবে কোনটি?",
+          options: {
+            A: "বিশুদ্ধ",
+            B: "দূষিত",
+            C: "মৃদু",
+            D: "খর পানি",
+          },
+          correct: "A",
+          explanation: `
+    <p>একটি পুকুরের পানির DO (দ্রবীভূত অক্সিজেন) এর মান ৪.০ mg/L বা ppm হলে পানিটি বিশুদ্ধ বা ভালো মানের হিসেবে বিবেচিত হয়।</p>
+    <ul>
+      <li>সাধারণত, জলজ প্রাণীর বেঁচে থাকার জন্য পানিতে ৪.০-৬.০ mg/L বা তার বেশি DO থাকা প্রয়োজন।</li>
+      <li>এর কম হলে পানি দূষিত বলে ধরে নেওয়া হয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 16,
+          question: "পানিতে দ্রবীভূত অক্সিজেন কী নামে পরিচিত?",
+          options: {
+            A: "COD",
+            B: "TDS",
+            C: "BOD",
+            D: "DO",
+          },
+          correct: "D",
+          explanation: `
+    <p>পানিতে দ্রবীভূত অক্সিজেনকে ইংরেজিতে Dissolved Oxygen এবং সংক্ষেপে DO নামে পরিচিত। এটি জলজ বাস্তুতন্ত্রের স্বাস্থ্য এবং পানির গুণগত মানের একটি গুরুত্বপূর্ণ নির্দেশক।</p>
+    `,
+        },
+        {
+          id: 17,
+          question:
+            "জৈব ও অজৈব উভয় ধরনের দূষণ জারণের জন্য O₂ এর পরিমাণ নির্দেশ করে কোনটি?",
+          options: {
+            A: "pH",
+            B: "DO",
+            C: "COD",
+            D: "BOD",
+          },
+          correct: "C",
+          explanation: `
+    <p>COD (Chemical Oxygen Demand) হলো পানিতে বিদ্যমান জৈব ও অজৈব উভয় ধরনের দূষককে জারিত করতে প্রয়োজনীয় অক্সিজেনের মোট পরিমাণ।</p>
+    <ul>
+      <li>COD পরীক্ষা করে পানির মোট দূষণের মাত্রা সম্পর্কে ধারণা পাওয়া যায়।</li>
+      <li>BOD শুধুমাত্র জৈব দূষককে বিয়োজিত করতে প্রয়োজনীয় অক্সিজেনের পরিমাণ নির্দেশ করে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 18,
+          question: "কোনটি পানির অস্থায়ী খরতার জন্য দায়ী?",
+          options: {
+            A: "CaCO₃",
+            B: "Mg(HCO₃)₂",
+            C: "AlCl₃",
+            D: "FeSO₄",
+          },
+          correct: "B",
+          explanation: `
+    <p>পানির অস্থায়ী খরতার জন্য ক্যালসিয়াম বাইকার্বনেট (Ca(HCO₃)₂) এবং ম্যাগনেসিয়াম বাইকার্বনেট (Mg(HCO₃)₂) দায়ী।</p>
+    <ul>
+      <li>Mg(HCO₃)₂ (ম্যাগনেসিয়াম বাইকার্বনেট) পানিতে দ্রবীভূত থাকে এবং এটি তাপ প্রয়োগে অদ্রবণীয় MgCO₃ তে পরিণত হয়ে অধঃক্ষিপ্ত হয়, ফলে খরতা দূর হয়।</li>
+      <li>CaCO₃ (ক্যালসিয়াম কার্বনেট) পানিতে অদ্রবণীয়, এটি খরতার কারণ নয়।</li>
+      <li>AlCl₃ এবং FeSO₄ পানির স্থায়ী খরতার কারণ হতে পারে, তবে অস্থায়ী খরতার জন্য বাইকার্বনেটগুলোই দায়ী।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 19,
+          question:
+            "১.০ L পানির নমুনায় ৫ mg O₂ দ্রবীভূত পাওয়া গেল, পানির নমুনাটির DO কত ppm?",
+          options: {
+            A: "১.০",
+            B: "২.০",
+            C: "৪",
+            D: "৫",
+          },
+          correct: "D",
+          explanation: `
+    <p>DO (দ্রবীভূত অক্সিজেন) এর একক হলো ppm (parts per million) বা mg/L।</p>
+    <ul>
+      <li>1 ppm = 1 mg/L।</li>
+      <li>যদি ১.০ L পানির নমুনায় ৫ mg O₂ দ্রবীভূত থাকে, তাহলে DO এর পরিমাণ হবে ৫ mg/L, যা ৫ ppm এর সমান।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 20,
+          question:
+            "একটি পানির নমুনার BOD ৪০। ঐ নমুনার প্রতি লিটারে কী পরিমাণ O₂ দ্রবীভূত?",
+          options: {
+            A: "৪০ mg",
+            B: "৪০ g",
+            C: "২০ mg",
+            D: "২০ g",
+          },
+          correct: "A",
+          explanation: `
+    <p>BOD (Biochemical Oxygen Demand) হলো পানিতে উপস্থিত জৈব পদার্থকে অণুজীব দ্বারা বিয়োজিত করতে প্রয়োজনীয় অক্সিজেনের পরিমাণ, যা mg/L বা ppm এককে প্রকাশ করা হয়।</p>
+    <ul>
+      <li>যদি একটি পানির নমুনার BOD ৪০ হয়, তার মানে ঐ নমুনার প্রতি লিটারে ৪০ mg অক্সিজেন প্রয়োজন হয় জৈব পদার্থ বিয়োজনের জন্য।</li>
+      <li>এই BOD মানটি পানিতে জৈব দূষণের মাত্রা নির্দেশ করে এবং এটি দ্রবীভূত অক্সিজেনের পরিমাণ নয়, বরং অক্সিজেনের চাহিদা।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 21,
+          question: "WHO অনুমোদিত পানির BOD কত ppm?",
+          options: {
+            A: "৪",
+            B: "৫",
+            C: "৬",
+            D: "১০",
+          },
+          correct: "C",
+          explanation: `
+    <p>WHO (World Health Organization) এর নির্দেশিকা অনুযায়ী, পানীয় জলের জন্য BOD এর অনুমোদিত সর্বোচ্চ মান ৬ ppm বা ৬ mg/L।</p>
+    <ul>
+      <li>এর বেশি BOD মান পানিতে জৈব দূষণের উপস্থিতি নির্দেশ করে এবং তা পান করার জন্য নিরাপদ নয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 22,
+          question: "কোন জলাশয়ে DO এর পরিমাণ সর্বাধিক থাকে কোন গভীরতায়?",
+          options: {
+            A: "১০-১২ m গভীরতা পর্যন্ত",
+            B: "১২-২০ m অঞ্চলে",
+            C: "> ২০m গভীরে",
+            D: "গভীরতার সঙ্গে সম্পর্ক নেই",
+          },
+          correct: "A",
+          explanation: `
+    <p>সাধারণত, জলাশয়ের উপরিভাগে এবং ১০-১২ মিটার গভীরতা পর্যন্ত সূর্যালোক পৌঁছানোর কারণে সালোকসংশ্লেষণ বেশি হয়, যা পানিতে অক্সিজেন উৎপন্ন করে। তাই এই গভীরতা পর্যন্ত DO (দ্রবীভূত অক্সিজেন) এর পরিমাণ সর্বাধিক থাকে।</p>
+    <ul>
+      <li>গভীরতা বাড়ার সাথে সাথে সূর্যালোকের পরিমাণ কমে যায় এবং জৈব পদার্থের পচনজনিত কারণে অক্সিজেনের ব্যবহার বেড়ে যায়, ফলে DO এর পরিমাণ হ্রাস পায়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 23,
+          question: "TDS কী?",
+          options: {
+            A: "পানিতে দ্রবীভূত O₂ এর পরিমাণ",
+            B: "পানিতে অণুজীব কর্তৃক বিয়োজিত O₂ এর পরিমাণ",
+            C: "পানির জৈব, অজৈব দূষককে কতটুকু অক্সিজেন দ্বারা বিজারিত করা হয় সে পরিমাণ",
+            D: "পানিতে দ্রবীভূত জৈব ও অজৈব পদার্থের পরিমাণ",
+          },
+          correct: "D",
+          explanation: `
+    <p>TDS (Total Dissolved Solids) হলো পানিতে দ্রবীভূত মোট জৈব ও অজৈব পদার্থের পরিমাণ। এর মধ্যে খনিজ লবণ, ধাতু, আয়ন, এবং কিছু জৈব পদার্থ অন্তর্ভুক্ত।</p>
+    <ul>
+      <li>উচ্চ TDS মান সাধারণত পানির স্বাদকে প্রভাবিত করে এবং কিছু ক্ষেত্রে স্বাস্থ্যঝুঁকি সৃষ্টি করতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 24,
+          question:
+            "পানিতে অণুজীব বেঁচে থাকার জন্য (DO) এর পরিমাণ থাকে- আদর্শ পানির DO (দ্রবীভূত অক্সিজেন) পরিসীমা কত?",
+          options: {
+            A: "(২-৩) ppm",
+            B: "(৪-৮) ppm",
+            C: "(৬-১৫) ppm",
+            D: "(২০-২৫) ppm",
+          },
+          correct: "B",
+          explanation: `
+    <p>পানিতে অণুজীব এবং অন্যান্য জলজ প্রাণী সুস্থভাবে বেঁচে থাকার জন্য আদর্শ দ্রবীভূত অক্সিজেন (DO) এর পরিসীমা হলো (৪-৮) ppm (mg/L)।</p>
+    <ul>
+      <li>৪ ppm এর নিচে DO হলে জলজ প্রাণীর জীবন বিপন্ন হতে পারে, এবং ৮ ppm এর বেশি হলে পানি খুবই ভালো মানের।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 25,
+          question: "পানির বিশুদ্ধতা পরিমাপের মানদণ্ড নয় কোনটি?",
+          options: {
+            A: "SDS",
+            B: "DO",
+            C: "BOD",
+            D: "pH",
+          },
+          correct: "A",
+          explanation: `
+    <p>SDS (Sodium Dodecyl Sulfate) হলো একটি সার্ফ্যাক্ট্যান্ট বা ডিটারজেন্ট, এটি পানির বিশুদ্ধতা পরিমাপের কোনো মানদণ্ড নয়।</p>
+    <ul>
+      <li>DO (দ্রবীভূত অক্সিজেন), BOD (জৈব রাসায়নিক অক্সিজেন চাহিদা), এবং pH (পানির অম্লতা বা ক্ষারত্ব) হলো পানির গুণগত মান পরিমাপের গুরুত্বপূর্ণ মানদণ্ড।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 26,
+          question: "পান করার উপযোগী পানিতে BOD এর গ্রহণযোগ্য মাত্রা কত?",
+          options: {
+            A: "১-২ mg/L",
+            B: "২-৩ mg/L",
+            C: "৪-৬ mg/L",
+            D: "৮-৯ mg/L",
+          },
+          correct: "C",
+          explanation: `
+    <p>পান করার উপযোগী পানিতে BOD (Biochemical Oxygen Demand) এর গ্রহণযোগ্য মাত্রা ৪-৬ mg/L।</p>
+    <ul>
+      <li>WHO এর নির্দেশিকা অনুযায়ী, পানীয় জলের জন্য BOD এর অনুমোদিত সর্বোচ্চ মান ৬ mg/L। এর বেশি BOD মান পানিতে জৈব দূষণের উপস্থিতি নির্দেশ করে।</li>
+      <li>কিছু উৎস থেকে ১-৩ mg/L বিশুদ্ধ পানির BOD হিসেবে বিবেচিত হয়, তবে ৬ mg/L পর্যন্ত গ্রহণযোগ্য ধরা হয়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 27,
+          question: "কোন জাতীয় বর্জ্যের জন্য ETP ব্যবহৃত হয়?",
+          options: {
+            A: "কঠিন",
+            B: "তরল",
+            C: "গ্যাসীয়",
+            D: "ধূলাজাতীয়",
+          },
+          correct: "B",
+          explanation: `
+    <p>ETP (Effluent Treatment Plant) মূলত শিল্প কারখানার তরল বর্জ্য পরিশোধনের জন্য ব্যবহৃত হয়।</p>
+    <ul>
+      <li>এই প্লান্ট তরল বর্জ্য থেকে ক্ষতিকর রাসায়নিক পদার্থ, ভারী ধাতু, জৈব পদার্থ এবং অন্যান্য দূষক অপসারণ করে, যাতে পরিশোধিত পানি পরিবেশে নিরাপদে ফেলা যায়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 28,
+          question: "পানীয় জলে WHO অনুমোদিত TDS এর সর্বোচ্চ মান কত?",
+          options: {
+            A: "১০ ppm",
+            B: "১০০ ppm",
+            C: "৫০০ ppm",
+            D: "৬০০০ ppm",
+          },
+          correct: "C",
+          explanation: `
+    <p>WHO (World Health Organization) অনুমোদিত পানীয় জলের জন্য TDS (Total Dissolved Solids) এর সর্বোচ্চ মান ৫০০ ppm (parts per million)।</p>
+    <ul>
+      <li>৫০০ ppm এর বেশি TDS হলে পানির স্বাদ তিক্ত বা লবণাক্ত হতে পারে এবং দীর্ঘমেয়াদী ব্যবহারের জন্য স্বাস্থ্য ঝুঁকি সৃষ্টি করতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 29,
+          question: "পানির বিশুদ্ধতার মানদণ্ড সম্পর্কে কোনটি সঠিক?",
+          options: {
+            A: "তাপমাত্রা বৃদ্ধিতে DO বৃদ্ধি পায়",
+            B: "COD এর মান BOD অপেক্ষা বেশি হয়",
+            C: "DO হ্রাস পেলে BOD হ্রাস পায়",
+            D: "COD বৃদ্ধি পেলে দূষণ হ্রাস পায়",
+          },
+          correct: "B",
+          explanation: `
+    <p>COD (Chemical Oxygen Demand) এর মান BOD (Biochemical Oxygen Demand) অপেক্ষা বেশি হয়।</p>
+    <ul>
+      <li>কারণ COD জৈব ও অজৈব উভয় ধরনের দূষককে জারিত করতে প্রয়োজনীয় অক্সিজেন নির্দেশ করে, যেখানে BOD শুধুমাত্র জৈব দূষককে বিয়োজিত করতে প্রয়োজনীয় অক্সিজেন নির্দেশ করে।</li>
+      <li>তাপমাত্রা বৃদ্ধিতে DO হ্রাস পায়, DO হ্রাস পেলে BOD বৃদ্ধি পায়, এবং COD বৃদ্ধি পেলে দূষণ বৃদ্ধি পায়।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 30,
+          question: "WHO এর মানদণ্ড হতে বর্ণহীন ও গন্ধহীন পানির pH সীমা কত?",
+          options: {
+            A: "৬.৫-৮.৫",
+            B: "৭.০-৮.০",
+            C: "৫.৫-৭.৫",
+            D: "৭.৫-৮.৫",
+          },
+          correct: "A",
+          explanation: `
+    <p>WHO (World Health Organization) এর মানদণ্ড অনুযায়ী, বর্ণহীন ও গন্ধহীন পানির জন্য pH সীমা হলো ৬.৫-৮.৫। এই সীমার মধ্যে থাকলে পানি পান করার জন্য গ্রহণযোগ্য বলে বিবেচিত হয়।</p>
+    `,
+        },
+        {
+          id: 31,
+          question: "বিশুদ্ধ পানির BOD এর স্ট্যান্ডার্ড মান-",
+          options: {
+            A: "১-৩ ppm",
+            B: "৫-১০ ppm",
+            C: "১০-১৫ ppm",
+            D: "২০-২৫ ppm",
+          },
+          correct: "A",
+          explanation: `
+    <p>বিশুদ্ধ পানির জন্য BOD (Biochemical Oxygen Demand) এর স্ট্যান্ডার্ড মান হলো ১-৩ ppm (mg/L)।</p>
+    <ul>
+      <li>এই নিম্ন মান নির্দেশ করে যে পানিতে জৈব দূষণের পরিমাণ খুব কম এবং এটি পরিবেশ ও স্বাস্থ্যের জন্য নিরাপদ।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 32,
+          question:
+            "একটি নদীর পানির দ্রবীভূত অক্সিজেন (DO) এর মান ২ mgL⁻¹। গুণগতভাবে উক্ত নদীর পানি মাছ এবং অন্যান্য জলজ প্রাণীর জন্য-",
+          options: {
+            A: "ভাল",
+            B: "খারাপ",
+            C: "অত্যন্ত ভাল",
+            D: "অত্যন্ত খারাপ",
+          },
+          correct: "D",
+          explanation: `
+    <p>একটি নদীর পানির DO (দ্রবীভূত অক্সিজেন) এর মান ২ mgL⁻¹ হলে তা মাছ এবং অন্যান্য জলজ প্রাণীর জন্য অত্যন্ত খারাপ।</p>
+    <ul>
+      <li>সাধারণত, জলজ প্রাণীর বেঁচে থাকার জন্য কমপক্ষে ৪-৬ mgL⁻¹ DO প্রয়োজন।</li>
+      <li>২ mgL⁻¹ এর মতো নিম্ন DO মান পানিতে অক্সিজেনের তীব্র ঘাটতি নির্দেশ করে, যা জলজ প্রাণীর মৃত্যু ঘটাতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 33,
+          question:
+            "জলাশয় পানির pH মান কত এর নিচে হলে জলজ উদ্ভিদ ও মাছ মারা যায়?",
+          options: {
+            A: "৩",
+            B: "৫",
+            C: "৬",
+            D: "৭",
+          },
+          correct: "A",
+          explanation: `
+    <p>জলাশয়ের পানির pH মান ৩ এর নিচে নেমে গেলে তা অত্যন্ত অম্লীয় হয়ে ওঠে, যা জলজ উদ্ভিদ ও মাছের জন্য মারাত্মক ক্ষতিকর এবং তাদের মৃত্যু ঘটাতে পারে।</p>
+    <ul>
+      <li>অধিকাংশ জলজ প্রাণীর জন্য pH ৬.৫ থেকে ৮.৫ এর মধ্যে থাকা আদর্শ।</li>
+      <li>pH এর চরম পরিবর্তন জলজ বাস্তুতন্ত্রের উপর নেতিবাচক প্রভাব ফেলে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 34,
+          question:
+            "EDTA পদ্ধতিতে পানির খরতা নির্ণয়ের সময় দ্রবণের pH কত হবে?",
+          options: {
+            A: "৭.০",
+            B: "১০.০",
+            C: "৬.৬",
+            D: "৫.৫",
+          },
+          correct: "B",
+          explanation: `
+    <p>EDTA (ইথিলিনডাইঅ্যামিনটেট্রাঅ্যাসেটিক এসিড) পদ্ধতিতে পানির খরতা নির্ণয়ের সময় দ্রবণের pH ১০.০ এ রাখা হয়।</p>
+    <ul>
+      <li>এর জন্য অ্যামোনিয়াম ক্লোরাইড-অ্যামোনিয়া বাফার দ্রবণ ব্যবহার করা হয়।</li>
+      <li>এই pH মান ম্যাগণেসিয়াম ও ক্যালসিয়াম আয়নকে নির্দেশকের সাথে ভালোভাবে বিক্রিয়া করতে সাহায্য করে, যা টাইট্রেশনের নির্ভুলতা নিশ্চিত করে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 35,
+          question: "TDS এর প্রধান উৎস-",
+          options: {
+            A: "শিল্প কারখানার বর্জ্য",
+            B: "এসিড",
+            C: "মোটরযান ধোঁয়া",
+            D: "C.F.C",
+          },
+          correct: "A",
+          explanation: `
+    <p>TDS (Total Dissolved Solids) এর প্রধান উৎসগুলোর মধ্যে শিল্প কারখানার বর্জ্য অন্যতম।</p>
+    <ul>
+      <li>শিল্প কারখানা থেকে নিঃসৃত তরল বর্জ্যে বিভিন্ন ধরনের দ্রবীভূত কঠিন পদার্থ যেমন খনিজ লবণ, ভারী ধাতু, এবং অন্যান্য রাসায়নিক উপাদান থাকে যা পানির TDS বৃদ্ধি করে।</li>
+      <li>এছাড়া প্রাকৃতিক উৎস যেমন শিলার ক্ষয় থেকেও TDS আসতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 36,
+          question:
+            "পানিতে অ্যামোনিয়ার পরিমাণ প্রতি লিটারে কত এর বেশি হলে জলজ প্রাণির জীবন বিপন্ন হয়ে পড়ে?",
+          options: {
+            A: "১০-৫০ μg",
+            B: "৫-১০ μg",
+            C: "২-৫ μg",
+            D: "০.২-১০ μg",
+          },
+          correct: "A",
+          explanation: `
+    <p>পানিতে অ্যামোনিয়ার পরিমাণ ১০-৫০ μg (মাইক্রোগ্রাম) প্রতি লিটারের বেশি হলে জলজ প্রাণীর জীবন বিপন্ন হয়ে পড়ে।</p>
+    <ul>
+      <li>অ্যামোনিয়া জলজ প্রাণীর জন্য অত্যন্ত বিষাক্ত, বিশেষ করে মাছের ফুলকার ক্ষতি করে এবং তাদের শ্বাসকার্য ব্যাহত করে।</li>
+      <li>অ্যামোনিয়ার উচ্চ ঘনত্ব জলজ বাস্তুতন্ত্রে অক্সিজেনের অভাবও সৃষ্টি করতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 37,
+          question: "২৫°C তাপমাত্রায় পানিতে অক্সিজেনের দ্রাব্যতা হলো-",
+          options: {
+            A: "৮.২৬ mgL⁻¹",
+            B: "১০.০৮ mgL⁻¹",
+            C: "১৪.৬২ mgL⁻¹",
+            D: "৫ mgL⁻¹",
+          },
+          correct: "A",
+          explanation: `
+    <p>২৫°C তাপমাত্রায় বিশুদ্ধ পানিতে অক্সিজেনের দ্রাব্যতা হলো ৮.২৬ mgL⁻¹ (মিলিলিটার প্রতি মিলিগ্রাম)।</p>
+    <ul>
+      <li>তাপমাত্রা বৃদ্ধির সাথে সাথে পানিতে অক্সিজেনের দ্রাব্যতা হ্রাস পায়।</li>
+      <li>ঠান্ডা পানিতে অক্সিজেন বেশি দ্রবীভূত থাকে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 38,
+          question: "EPA এর মানদণ্ডে পানিতে আদর্শ TDS কত?",
+          options: {
+            A: "১০০ ppm",
+            B: "২০০ ppm",
+            C: " ৩০০ ppm",
+            D: "৫০০ ppm",
+          },
+          correct: "D",
+          explanation: `
+    <p>EPA (Environmental Protection Agency) এর মানদণ্ডে পানীয় জলের জন্য আদর্শ TDS (Total Dissolved Solids) ৫০০ ppm (parts per million)।</p>
+    <ul>
+      <li>এই মানটি সাধারণত পানির স্বাদ ও গুণগত মানের একটি নির্দেশক হিসেবে ধরা হয়। ৫০০ ppm এর বেশি হলে তা অবাঞ্ছিত স্বাদের কারণ হতে পারে।</li>
+    </ul>
+    `,
+        },
+        {
+          id: 39,
+          question:
+            "পানিতে কোন আয়নের ঘনমাত্রা বৃদ্ধি পেলে মাছের শ্বাসকার্য বাধাপ্রাপ্ত হয়?",
+          options: {
+            A: "Al³⁺",
+            B: "Na⁺",
+            C: "Ca²⁺",
+            D: "K⁺",
+          },
+          correct: "A",
+          explanation: `
+    <p>পানিতে Al³⁺ (অ্যালুমিনিয়াম) আয়নের ঘনমাত্রা বৃদ্ধি পেলে মাছের শ্বাসকার্য বাধাপ্রাপ্ত হয়।</p>
+    <ul>
+      <li>অ্যালুমিনিয়াম মাছের ফুলকায় জমা হয়ে ফুলকার টিস্যুকে ক্ষতিগ্রস্ত করে, যার ফলে অক্সিজেন গ্রহণ ক্ষমতা কমে যায় এবং মাছের শ্বাস নিতে কষ্ট হয়।</li>
+      <li>এটি বিশেষ করে অম্লীয় পানিতে বেশি দেখা যায় যেখানে অ্যালুমিনিয়াম দ্রবণীয় হয়ে ওঠে।</li>
+    </ul>
+    `,
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                              <label class="option" data-option="${option}">
+                                                <div class="circle">${option}</div>
+                                                <span class="option-text">${question.options[option]}</span>
+                                              </label>
+                                            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                 <div class="explanation-content">
+                                                   <div class="explanation-label">ব্যাখ্যা:</div>
+                                                   ${question.explanation}
+                                                 </div>
+                                               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                            <p class="question-label">${
+                                              index + 1
+                                            }. ${question.question}</p>
+                                            <div class="options">
+                                              ${optionsHTML}
+                                            </div>
+                                            ${explanationHTML}
+                                          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
